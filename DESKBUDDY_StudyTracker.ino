@@ -1,14 +1,25 @@
 // ============================================================
-//  RoboEyes Pro – ESP32 / ESP8266  (Study Tracker Edition)
+//  DESKBUDDY_StudyTracker.ino  –  ESP32 / ESP8266
+//  RoboEyes Pro  (Study Tracker Edition)
 //
-//  FIX 1: handlePresence() no longer touches the stopwatch.
-//          Face-detected  → ONLY study timer starts.
-//          Palm gesture   → ONLY stopwatch starts (via /stopwatch).
+//  SETUP:
+//    1. Create secrets.h in the same folder (see secrets.h file)
+//    2. Add secrets.h to .gitignore  ← IMPORTANT
+//    3. Flash to your ESP32 and note the IP in Serial Monitor
 //
-//  FIX 2: Study tab now shows a smooth, live-updating clock
-//          (interpolated locally every 50 ms, same as stopwatch).
-//          studyMs + studySitting are now part of /status JSON.
+//  FIXES APPLIED:
+//    • WiFi credentials moved to secrets.h (never commit creds)
+//    • handlePresence() no longer touches the stopwatch
+//      Face-detected  → ONLY study timer starts
+//      Palm gesture   → ONLY stopwatch starts (via /stopwatch)
+//    • Study tab shows smooth, live-updating clock
+//      (interpolated locally every 50 ms, same as stopwatch)
+//      studyMs + studySitting are now part of /status JSON
+//    • Boot screen now shows a proper branded splash
 // ============================================================
+
+// ── Credentials (kept in secrets.h, out of version control) ──
+#include "secrets.h"
 
 // 1. Display FIRST
 #include <Adafruit_SSD1306.h>
@@ -31,11 +42,6 @@ roboEyes roboEyes;
   #include <WebServer.h>
   WebServer server(80);
 #endif
-
-// ── CHANGE THESE ────────────────────────────────────────────
-const char* ssid     = "Airtel_201";
-const char* password = "Airtel@123";
-// ────────────────────────────────────────────────────────────
 
 #define BUTTON_PIN 4
 
@@ -89,9 +95,12 @@ int logHead  = 0;
 
 void logPush(const char* type, const char* label, const char* dur) {
   int idx = logHead % MAX_LOG_ENTRIES;
-  strncpy(studyLog[idx].type,  type,  5);               studyLog[idx].type[5]            = '\0';
-  strncpy(studyLog[idx].label, label, LOG_LABEL_LEN-1); studyLog[idx].label[LOG_LABEL_LEN-1] = '\0';
-  strncpy(studyLog[idx].dur,   dur,   LOG_DUR_LEN-1);   studyLog[idx].dur[LOG_DUR_LEN-1]    = '\0';
+  strncpy(studyLog[idx].type,  type,  5);
+  studyLog[idx].type[5] = '\0';
+  strncpy(studyLog[idx].label, label, LOG_LABEL_LEN - 1);
+  studyLog[idx].label[LOG_LABEL_LEN - 1] = '\0';
+  strncpy(studyLog[idx].dur,   dur,   LOG_DUR_LEN - 1);
+  studyLog[idx].dur[LOG_DUR_LEN - 1] = '\0';
   logHead++;
   if (logCount < MAX_LOG_ENTRIES) logCount++;
 }
@@ -127,6 +136,44 @@ unsigned long swCurrent() {
 // Live study milliseconds (safe to call anytime)
 unsigned long studyCurrent() {
   return studySitting ? studyTotalMs + (millis() - studySitMs) : studyTotalMs;
+}
+
+// ============================================================
+//  BOOT SCREEN
+//  Shows a branded splash at startup instead of plain text.
+// ============================================================
+void showBootScreen(const char* line1, const char* line2) {
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+
+  // Outer border
+  display.drawRect(0, 0, 128, 64, SSD1306_WHITE);
+
+  // Title bar background (filled top strip)
+  display.fillRect(1, 1, 126, 14, SSD1306_WHITE);
+
+  // Title text (inverted — black text on white bar)
+  display.setTextColor(SSD1306_BLACK);
+  display.setTextSize(1);
+  display.setCursor(14, 4);
+  display.print("DESKBUDDY v1.0");
+
+  // Divider
+  display.setTextColor(SSD1306_WHITE);
+  display.drawLine(1, 15, 126, 15, SSD1306_WHITE);
+
+  // Status lines
+  display.setCursor(6, 22);
+  display.print(line1);
+  display.setCursor(6, 36);
+  display.print(line2);
+
+  // Animated dots hint
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(6, 52);
+  display.print("github: gaurav1847");
+
+  display.display();
 }
 
 // ============================================================
@@ -204,11 +251,11 @@ void checkButton() {
 //  WEB HANDLERS
 // ============================================================
 
-// ── /status  (now includes study data for live JS interpolation) ──
+// ── /status  (includes study data for live JS interpolation) ──
 void handleStatus() {
   unsigned long rem   = timerRemaining();
   unsigned long sw    = swCurrent();
-  unsigned long study = studyCurrent();   // ← NEW: live study ms
+  unsigned long study = studyCurrent();
   char json[300];
   sprintf(json,
     "{"
@@ -218,8 +265,8 @@ void handleStatus() {
       "\"timerRun\":%s,"
       "\"swMs\":%lu,"
       "\"swRun\":%s,"
-      "\"studyMs\":%lu,"        // ← NEW
-      "\"studySitting\":%s"     // ← NEW
+      "\"studyMs\":%lu,"
+      "\"studySitting\":%s"
     "}",
     modeIdx,
     timerDuration, rem,
@@ -262,19 +309,19 @@ void handleEyes() {
     if      (a == "laugh")    roboEyes.anim_laugh();
     else if (a == "confused") roboEyes.anim_confused();
   }
-  if (server.hasArg("blink")) roboEyes.setAutoblinker(server.arg("blink")=="on"?ON:OFF,3,2);
-  if (server.hasArg("idle"))  roboEyes.setIdleMode   (server.arg("idle") =="on"?ON:OFF,2,2);
+  if (server.hasArg("blink")) roboEyes.setAutoblinker(server.arg("blink") == "on" ? ON : OFF, 3, 2);
+  if (server.hasArg("idle"))  roboEyes.setIdleMode   (server.arg("idle")  == "on" ? ON : OFF, 2, 2);
   if (server.hasArg("pos")) {
     String p = server.arg("pos");
-    if      (p=="N")  roboEyes.setPosition(N);
-    else if (p=="NE") roboEyes.setPosition(NE);
-    else if (p=="E")  roboEyes.setPosition(E);
-    else if (p=="SE") roboEyes.setPosition(SE);
-    else if (p=="S")  roboEyes.setPosition(S);
-    else if (p=="SW") roboEyes.setPosition(SW);
-    else if (p=="W")  roboEyes.setPosition(W);
-    else if (p=="NW") roboEyes.setPosition(NW);
-    else              roboEyes.setPosition(DEFAULT);
+    if      (p == "N")  roboEyes.setPosition(N);
+    else if (p == "NE") roboEyes.setPosition(NE);
+    else if (p == "E")  roboEyes.setPosition(E);
+    else if (p == "SE") roboEyes.setPosition(SE);
+    else if (p == "S")  roboEyes.setPosition(S);
+    else if (p == "SW") roboEyes.setPosition(SW);
+    else if (p == "W")  roboEyes.setPosition(W);
+    else if (p == "NW") roboEyes.setPosition(NW);
+    else                roboEyes.setPosition(DEFAULT);
   }
   server.send(200, "text/plain", "OK");
 }
@@ -301,7 +348,7 @@ void handleTimer() {
   server.send(200, "text/plain", "OK");
 }
 
-// ── /stopwatch  – palm-controlled ONLY, untouched by presence ─
+// ── /stopwatch  – palm-controlled ONLY ────────────────────────
 void handleStopwatch() {
   if (server.hasArg("action")) {
     String a = server.arg("action");
@@ -312,15 +359,13 @@ void handleStopwatch() {
   server.send(200, "text/plain", "OK");
 }
 
-// ── /presence  – face-detected events (STUDY TIMER ONLY) ─────
-//   FIX: Removed all swRunning / swElapsed manipulation here.
-//        The stopwatch is now 100% independent from face presence.
+// ── /presence  – face-detected events (STUDY TIMER ONLY) ──────
+//   Stopwatch is 100% independent from face presence.
 void handlePresence() {
   if (server.hasArg("state")) {
     String s = server.arg("state");
 
     if (s == "active") {
-      // Face detected → start study timer only
       if (!studySitting) {
         studySitting = true;
         studySitMs   = millis();
@@ -329,7 +374,6 @@ void handlePresence() {
       Serial.println("[presence] ACTIVE – study timer started");
 
     } else if (s == "away") {
-      // Face gone → pause study timer only
       if (studySitting) {
         studyTotalMs += millis() - studySitMs;
         studySitting  = false;
@@ -344,7 +388,6 @@ void handlePresence() {
     }
   }
 
-  // Return current study state (stopwatch state excluded intentionally)
   char json[80];
   sprintf(json,
     "{\"studyMs\":%lu,\"studySitting\":%s}",
@@ -355,10 +398,14 @@ void handlePresence() {
   server.send(200, "application/json", json);
 }
 
-// ── /log ─────────────────────────────────────────────────────
+// ── /log ──────────────────────────────────────────────────────
 void handleLog() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  if (server.hasArg("clear")) { logCount = 0; logHead = 0; server.send(200,"text/plain","OK"); return; }
+  if (server.hasArg("clear")) {
+    logCount = 0; logHead = 0;
+    server.send(200, "text/plain", "OK");
+    return;
+  }
   if (server.hasArg("type") && server.hasArg("label")) {
     String dur = server.hasArg("dur") ? server.arg("dur") : "";
     logPush(server.arg("type").c_str(), server.arg("label").c_str(), dur.c_str());
@@ -370,7 +417,7 @@ void handleLog() {
   for (int i = 0; i < logCount; i++) {
     int idx = (start + i) % MAX_LOG_ENTRIES;
     if (i) json += ",";
-    json += "{\"type\":\"";  json += studyLog[idx].type;
+    json += "{\"type\":\"";   json += studyLog[idx].type;
     json += "\",\"label\":\""; json += studyLog[idx].label;
     json += "\",\"dur\":\"";   json += studyLog[idx].dur;
     json += "\"}";
@@ -383,7 +430,7 @@ void handleLog() {
 void handleStudyStats() {
   unsigned long total = studyCurrent();
   char json[80];
-  sprintf(json, "{\"totalMs\":%lu,\"sitting\":%s}", total, studySitting?"true":"false");
+  sprintf(json, "{\"totalMs\":%lu,\"sitting\":%s}", total, studySitting ? "true" : "false");
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", json);
 }
@@ -571,7 +618,7 @@ hr{border:none;border-top:1px solid #1e1e2e;margin:14px 0}
     <div class="clock-sub"  id="swStat">READY</div>
   </div>
   <p style="font-size:11px;color:#555;text-align:center;margin:-6px 0 14px">
-    ✋ Also controlled by open palm gesture (hold 0.8s)
+    &#9996; Also controlled by open palm gesture (hold 0.8s)
   </p>
   <div class="g3">
     <button class="btn ok" onclick="SW('start')">&#9654; Start</button>
@@ -594,7 +641,7 @@ hr{border:none;border-top:1px solid #1e1e2e;margin:14px 0}
     </div>
   </div>
 
-  <!-- Stat pills row: stopwatch separate -->
+  <!-- Stat pills row -->
   <div class="stats-row">
     <div class="stat-pill">
       <div class="val" id="sSessionCount">0</div>
@@ -602,7 +649,7 @@ hr{border:none;border-top:1px solid #1e1e2e;margin:14px 0}
     </div>
     <div class="stat-pill sw-pill">
       <div class="val" id="sSwTime">00:00.00</div>
-      <div class="lbl">✋ Palm Stopwatch</div>
+      <div class="lbl">&#9996; Palm Stopwatch</div>
     </div>
   </div>
 
@@ -619,8 +666,8 @@ hr{border:none;border-top:1px solid #1e1e2e;margin:14px 0}
   </div>
 
   <div class="hint-box" style="margin-top:14px">
-    <b>😊 Face detected</b> → Study timer starts automatically<br>
-    <b>✋ Open palm</b> (hold 0.8s) → Palm stopwatch only<br>
+    <b>&#128522; Face detected</b> → Study timer starts automatically<br>
+    <b>&#9996; Open palm</b> (hold 0.8s) → Palm stopwatch only<br>
     These two timers are completely independent.
   </div>
 </div>
@@ -668,8 +715,8 @@ function fmtMs(ms, cs){
 // ── Live state (synced from /status every 600ms) ──────────────
 let timerRemMs=60000, timerRunning=false, timerDurMs=60000;
 let swMs=0, swRunning=false;
-let studyMs=0, studySitting=false;  // ← NEW: study state from server
-let localTick=0, studyLocalRef=0;   // ← for local interpolation
+let studyMs=0, studySitting=false;
+let localTick=0, studyLocalRef=0;
 
 function localUpdate(){
   let now=Date.now(), dt=now-localTick; localTick=now;
@@ -694,15 +741,14 @@ function localUpdate(){
   if(swD) swD.textContent=fmtMs(swMs,true);
   if(swS) swS.textContent=swRunning?'RUNNING':'STOPPED';
 
-  // ── Study timer (face) – smooth local interpolation ──────────
-  // Add elapsed ms since last server sync if currently sitting
+  // Study timer (face) – smooth local interpolation
   let liveStudy = studySitting ? studyMs + (now - studyLocalRef) : studyMs;
   let clockEl  = document.getElementById('studyClock');
   let dotEl    = document.getElementById('sDot');
   let labelEl  = document.getElementById('sLabel');
   let swPillEl = document.getElementById('sSwTime');
   if(clockEl){
-    clockEl.textContent = fmtMs(liveStudy, false);  // hh:mm:ss or mm:ss
+    clockEl.textContent = fmtMs(liveStudy, false);
     if(studySitting){ clockEl.className='study-big-time sitting'; }
     else            { clockEl.className='study-big-time away'; }
   }
@@ -720,9 +766,9 @@ async function syncServer(){
     timerDurMs    = d.timerDurMs;
     swMs          = d.swMs;
     swRunning     = d.swRun;
-    studyMs       = d.studyMs;       // ← from new /status field
-    studySitting  = d.studySitting;  // ← from new /status field
-    studyLocalRef = Date.now();      // ← reset local interpolation anchor
+    studyMs       = d.studyMs;
+    studySitting  = d.studySitting;
+    studyLocalRef = Date.now();
     document.getElementById('badge').textContent=['EYES','TIMER','WATCH','STUDY'][d.mode];
   }catch(e){}
 }
@@ -777,29 +823,32 @@ void setup() {
     Serial.println(F("SSD1306 failed"));
     for (;;);
   }
-  display.clearDisplay(); display.display();
+  display.clearDisplay();
+  display.display();
 
   roboEyes.begin(SCREEN_WIDTH, SCREEN_HEIGHT, 100);
   roboEyes.setAutoblinker(ON, 3, 2);
   roboEyes.setIdleMode(ON, 2, 2);
 
-  display.setTextSize(1); display.setTextColor(SSD1306_WHITE);
-  display.setCursor(20, 20); display.print("Connecting WiFi..."); display.display();
+  // ── Branded boot screen ──────────────────────────────────
+  showBootScreen("Connecting WiFi...", ssid);
 
   WiFi.begin(ssid, password);
   int tries = 0;
-  while (WiFi.status() != WL_CONNECTED && tries < 30) { delay(500); Serial.print("."); tries++; }
+  while (WiFi.status() != WL_CONNECTED && tries < 30) {
+    delay(500);
+    Serial.print(".");
+    tries++;
+  }
 
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nConnected! IP: " + WiFi.localIP().toString());
-    display.clearDisplay();
-    display.setCursor(0, 18); display.setTextSize(1);
-    display.print("Connected!\n"); display.print(WiFi.localIP().toString());
-    display.display(); delay(2000);
+    showBootScreen("Connected!", WiFi.localIP().toString().c_str());
+    delay(2000);
   } else {
-    Serial.println("\nWiFi failed.");
-    display.clearDisplay(); display.setCursor(10, 25);
-    display.print("WiFi failed. Offline."); display.display(); delay(2000);
+    Serial.println("\nWiFi failed. Running offline.");
+    showBootScreen("WiFi failed.", "Running offline.");
+    delay(2000);
   }
 
   server.on("/",           []() { server.send(200, "text/html", index_html); });

@@ -1,0 +1,21 @@
+# ── Credentials (NEVER commit these) ────────────────────────
+secrets.h
+
+# ── Personal data ────────────────────────────────────────────
+study_sessions.json
+
+# ── MediaPipe models (auto-downloaded on first run) ──────────
+*.tflite
+*.task
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
