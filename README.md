@@ -29,3 +29,51 @@ The system utilizes a Python-based tracking script (OpenCV + MediaPipe Tasks API
    const char* ssid     = "YOUR_WIFI_NAME";
    const char* password = "YOUR_WIFI_PASSWORD";
    #endif
+   
+3. Install the required libraries ( Adafruit SSD1306 and FluxGarage_RoboEyes ).
+4. Flash the code to your ESP32 and note the IP address printed on the OLED boot screen or Serial Monitor.
+2. Python Setup
+
+    Clone or download this repository to your local machine.
+
+    Install all required dependencies with one command:
+
+Bash
+
+pip install -r requirements.txt
+
+    Open config.py and update the ESP32_IP variable with the IP address from your hardware.
+
+🎮 Usage
+
+    Power up the ESP32. It will connect to your WiFi and display the boot screen.
+
+    Run the Tracker:
+
+Bash
+
+python study_tracker.py
+
+(Add --preview to the command if you want to see the live camera feed and tracking skeletons).
+
+    Start Studying: The webcam will look for your face. Once detected, the ESP32 timer starts.
+
+    Use Gestures: Show an open palm to the camera and hold it for 0.8 seconds to toggle the separate stopwatch.
+
+    View Your Stats: Open http://localhost:8080 in your web browser to view your live dashboard, study streaks, and download your CSV logs.
+
+🤝 Credits & Acknowledgments
+
+    Hardware Animations: The animated eye graphics on the OLED display are powered by the excellent FluxGarage_RoboEyes library. The original copyright notices remain intact within the source code.
+
+    🗺️ Future Roadmap
+
+    Pomodoro Integration: Adding a Pomodoro timer mode where the OLED eyes automatically fall asleep during breaks.
+
+    Hardware Enclosure: Designing a custom 3D-printed desktop case to house the ESP32 and OLED securely.
+
+    Cross-Platform Testing: Verifying and optimizing the Python script for Linux environments.
+
+📝 License
+
+This project is open-source and available under the MIT License.
