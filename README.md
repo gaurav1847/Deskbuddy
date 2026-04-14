@@ -44,3 +44,14 @@ The system utilizes a Python-based tracking script (OpenCV + MediaPipe) on your 
 2. Install the required Python dependencies:
    ```bash
    pip install opencv-python mediapipe requests flask
+   ## 🗺️ Future Roadmap (v1.1 and Beyond)
+
+This project is actively being improved. Here are a few features planned for future releases:
+
+* **Persistent Data Storage:** Upgrading the Python backend to log study sessions into a CSV or SQLite database, so you can track your total study hours over months of exam preparation.
+* **Pomodoro Integration:** Adding a Pomodoro timer mode (e.g., 50 minutes of tracking, 10-minute break) where the OLED eyes automatically fall asleep during the break period.
+* **Advanced Gesture Controls:** Adding new MediaPipe gestures (like a "thumbs up" to manually log a session, or a "peace sign" to pause the tracker).
+* **Hardware Enclosure:** Designing and 3D printing a custom desktop case to house the ESP32 and OLED securely, moving it off the breadboard.
+* **Cross-Platform Testing:** Verifying and optimizing the Python script for Linux environments to ensure seamless dual-boot compatibility.
+
+*Want to contribute? Feel free to open an issue or submit a pull request!*
