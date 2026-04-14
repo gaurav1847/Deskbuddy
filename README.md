@@ -51,8 +51,8 @@ pip install -r requirements.txt
    Run the Tracker:
 
 Bash
-
-python study_tracker.py
+    python study_tracker.py --preview
+ 
 
 (Add --preview to the command if you want to see the live camera feed and tracking skeletons).
 
