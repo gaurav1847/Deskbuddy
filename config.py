@@ -1,13 +1,15 @@
 # ============================================================
-#  config.py  –  DeskBuddy Study Tracker configuration
+#  config.py  –  DeskBuddy Study Tracker v2.0 configuration
 #
 #  Edit this file to configure the tracker.
 #  Do NOT edit study_tracker.py for basic setup.
 # ============================================================
 
 # ── Network ──────────────────────────────────────────────────
-ESP32_IP       = "192.168.1.9"   # IP printed in Arduino Serial Monitor
-DASHBOARD_PORT = 8080            # http://localhost:8080
+# Use the mDNS hostname (recommended) or the static IP below.
+# mDNS works on macOS/Linux natively; Windows needs Bonjour.
+ESP32_IP       = "deskbuddy.local"   # OR use "192.168.1.5"
+DASHBOARD_PORT = 8080                # http://localhost:8080
 
 # ── Detection tuning ─────────────────────────────────────────
 AWAY_TIMEOUT    = 5     # seconds without face before session ends
@@ -19,7 +21,7 @@ PALM_HOLD_SECS  = 0.8   # seconds to hold open palm to trigger stopwatch
 CONFIRM_FRAMES  = 3     # consecutive face frames needed to confirm PRESENT
 
 # ── Data ─────────────────────────────────────────────────────
-SESSION_FILE = "study_sessions.json"   # local session log
+SESSION_FILE = "study_sessions.json"   # local session log (PC-side)
 
 # ── MediaPipe model paths (auto-downloaded if missing) ───────
 FACE_MODEL_PATH = "blaze_face_short_range.tflite"
