@@ -1,5 +1,5 @@
 """
-study_tracker.py  –  DeskBuddy Study Tracker  v2.0
+study_tracker.py  –  DeskBuddy Study Tracker  v2.1
 ====================================================
 Compatible with mediapipe >= 0.10  (Tasks API)
 
