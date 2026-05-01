@@ -30,7 +30,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // ── RoboEyes ───────────────────────────────────────────────
 #include <FluxGarage_RoboEyes.h>
-roboEyes roboEyes;
+RoboEyes<Adafruit_SSD1306> roboEyes(display);
 
 // ── WiFi + Web server ──────────────────────────────────────
 #include <WiFi.h>
